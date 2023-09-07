@@ -65,12 +65,12 @@ let rec saveTextApp =
 let help () =
     let text =
         """
-clip-tools
-Usage: clip-tools [-v | --version] [-h | --help] <command>
+clipTools
+Usage: clipTools [-v | --version] [-h | --help] <command>
 Commands:
     counter
-    saveImage [DIR]
-    saveText [DIR]
+    saveImage   [DIR]
+    saveText    [DIR]
     """
 
     let text = text.Trim()
