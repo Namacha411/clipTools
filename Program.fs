@@ -69,8 +69,8 @@ clip-tools
 Usage: clip-tools [-v | --version] [-h | --help] <command>
 Commands:
     counter
-    saveImage [path]
-    saveText [path]
+    saveImage [DIR]
+    saveText [DIR]
     """
 
     let text = text.Trim()
