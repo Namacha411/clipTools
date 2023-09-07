@@ -3,9 +3,6 @@ open System.IO
 open System.Text.RegularExpressions
 open System.Windows
 open System.Windows.Media.Imaging
-// prerelease
-open System.CommandLine
-open System.CommandLine.NamingConventionBinder
 
 open Microsoft.Toolkit.Uwp.Notifications
 
@@ -17,6 +14,8 @@ let toastNotification message detail =
         .AddText(message)
         .AddText(detail)
         .Show()
+
+    0
 
 let removeWhiteSpace str = Regex.Replace(str, @"[\s]+", "")
 
@@ -44,7 +43,7 @@ let rec saveImageApp =
         let image = Clipboard.GetImage()
         let fileName = DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss")
         let path = Path.Combine(saveDir, $"{fileName}.png")
-        let stream = new FileStream(path, FileMode.CreateNew)
+        use stream = new FileStream(path, FileMode.CreateNew)
         let encoer = new PngBitmapEncoder()
         encoer.Frames.Add <| BitmapFrame.Create(image)
         encoer.Save(stream)
@@ -59,38 +58,50 @@ let rec saveTextApp =
         let text = Clipboard.GetText()
         let fileName = DateTime.Now.ToString("yyyy-MM-dd_hh-mm-ss")
         let path = Path.Combine(saveDir, $"{fileName}.txt")
-        let stream = new StreamWriter(path)
+        use stream = new StreamWriter(path, true)
         stream.Write(text)
-        toastNotification "Saved Image!" <| path.ToString()
+        toastNotification "Saved Text!" <| path.ToString () + $"\n{text}"
+
+let help () =
+    let text =
+        """
+clip-tools
+Usage: clip-tools [-v | --version] [-h | --help] <command>
+Commands:
+    counter
+    saveImage [path]
+    saveText [path]
+    """
+
+    let text = text.Trim()
+
+    printfn "%s" text
+
+let version () =
+    let version = "23.9.7"
+    printfn "%s" version
 
 [<STAThread>]
 [<EntryPoint>]
 let main args =
-    let rootCommand = new RootCommand "Clipboard-Tools"
+    let args = args |> Array.toList
 
-    let counter = Command "Counter"
-    counter.Handler <- CommandHandler.Create(fun _ -> counterApp ())
-
-    let saveImage = Command "SaveImage"
-    saveImage.AddOption <| Option<string> "--path"
-
-    saveImage.Handler <-
-        CommandHandler.Create(fun a b ->
-            printfn a
-            printfn b
-            saveImageApp None)
-
-    let saveText = Command "SaveText"
-    saveText.AddOption <| Option<string> "--path"
-
-    saveText.Handler <-
-        CommandHandler.Create(fun a b ->
-            printfn a
-            printfn b
-            saveTextApp None)
-
-    rootCommand.AddCommand(counter)
-    rootCommand.AddCommand(saveImage)
-    rootCommand.AddCommand(saveText)
-
-    rootCommand.Invoke args
+    match args with
+    | head :: _ when head = "--help" || head = "-h" ->
+        help ()
+        0
+    | head :: _ when head = "--version" || head = "-v" ->
+        version ()
+        0
+    | head :: _ when head = "counter" -> counterApp ()
+    | head :: teil when head = "saveImage" ->
+        match teil with
+        | h :: _ -> saveImageApp <| Some h
+        | [] -> saveImageApp None
+    | head :: teil when head = "saveText" ->
+        match teil with
+        | h :: _ -> saveTextApp <| Some h
+        | [] -> saveTextApp None
+    | _ ->
+        help ()
+        1
